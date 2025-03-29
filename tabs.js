@@ -1,10 +1,8 @@
 const linkData = {
-    buttons: [
-        { text: 'Page 1', href: '/page1' },
-        { text: 'Page 2', href: '/page2' },
-        { text: 'Page 3', href: '/page3' }
+    Text_Tools: [
+        { text: 'Soon', href: '/page1' }
     ],
-    json: [
+    JSON: [
         { text: 'JSON', href: '/JSON' },
         { text: 'Other Links', children: [
             { text: 'Link 1', href: '/link1' },
