@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="https://a.seed.soy/Sprout.png" type="image/x-icon">
+    <title>Seed - Tools</title>
+    <style>
+        html {
+            height: 100%;
+            overflow: hidden;
+        }
+        body {
+            font-family: "Lucida Console", "Courier New", monospace;
+            font-size: 13px;
+            margin: 0;
+            padding: 0;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            height: 100%;
+            overflow: hidden;
+            overscroll-behavior: none;
+        }
+        #container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            overscroll-behavior: none;
+        }
+        #tabs {
+            flex: 0 0 25px;
+            background-color: #333333;
+            border-bottom: 1px solid #444444;
+            display: flex;
+            overflow: hidden;
+        }
+        .tab {
+            padding: 5px 15px;
+            cursor: pointer;
+            background-color: #333333;
+            border-right: 1px solid #444444;
+            color: #bbbbbb;
+            box-sizing: border-box;
+        }
+        .tab.active {
+            background-color: #252526;
+            border-bottom: 1px solid #252526;
+            position: relative;
+            top: 1px;
+            color: #ffffff;
+        }
+        #content {
+            background-color: #252526;
+            border: 1px solid #444444;
+            border-top: none;
+            flex: 1 1 auto;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 5px;
+            user-select: none;
+            overscroll-behavior-y: none;
+            max-height: calc(100vh - 26px); /* 25px tabs + 1px border */
+        }
+        .node {
+            margin-left: 18px;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .node.collapsed > .children {
+            display: none;
+        }
+        .toggle {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            text-align: center;
+            color: #888888;
+            font-size: 10px;
+            vertical-align: middle;
+        }
+        .node.expandable.collapsed .toggle::before {
+            content: '\25B8';
+        }
+        .node.expandable.expanded .toggle::before {
+            content: '\25BE';
+        }
+        .link {
+            color: #569cd6;
+        }
+        #footer {
+            position: fixed;
+            bottom: 5px;
+            right: 5px;
+            font-size: 11px;
+        }
+        #footer a {
+            color: #569cd6;
+            text-decoration: none;
+        }
+        #footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="tabs"></div>
+        <div id="content">
+            <div id="linkTree"></div>
+        </div>
+    </div>
+    <div id="footer">
+        by Seed <a href="https://Seed.soy" target="_blank">(Seed.soy)</a>
+    </div>
+    <script src="tabs.js"></script>
+    <script>
+        const tabsContainer = document.getElementById('tabs');
+        const linkTree = document.getElementById('linkTree');
+        let currentTab = Object.keys(linkData)[0];
+
+        function createTabs() {
+            tabsContainer.innerHTML = '';
+            Object.keys(linkData).forEach(tabKey => {
+                const tabDiv = document.createElement('div');
+                tabDiv.className = 'tab';
+                tabDiv.dataset.tab = tabKey;
+                tabDiv.textContent = tabKey.charAt(0).toUpperCase() + tabKey.slice(1);
+                tabsContainer.appendChild(tabDiv);
+            });
+            const activeTab = tabsContainer.querySelector(`.tab[data-tab="${currentTab}"]`);
+            if (activeTab) activeTab.classList.add('active');
+        }
+
+        function showTab(tab) {
+            tabsContainer.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            const tabElement = tabsContainer.querySelector(`.tab[data-tab="${tab}"]`);
+            if (tabElement) tabElement.classList.add('active');
+            renderLinks(tab);
+            currentTab = tab;
+        }
+
+        tabsContainer.addEventListener('click', (e) => {
+            const tab = e.target.dataset.tab;
+            if (tab) showTab(tab);
+        });
+
+        linkTree.addEventListener('click', (e) => {
+            const node = e.target.closest('.node');
+            if (!node) return;
+            if (node.classList.contains('expandable')) {
+                node.classList.toggle('collapsed');
+                node.classList.toggle('expanded');
+            }
+            const link = e.target.closest('.link');
+            if (link && link.dataset.href) {
+                window.location.href = link.dataset.href;
+            }
+        });
+
+        function renderLinks(tab) {
+            linkTree.innerHTML = '';
+            if (!linkData[tab] || linkData[tab].length === 0) return;
+            const fragment = document.createDocumentFragment();
+            buildLinkTree(linkData[tab], fragment, []);
+            linkTree.appendChild(fragment);
+        }
+
+        function buildLinkTree(items, parentElement, path) {
+            for (const item of items) {
+                const isExpandable = item.children && item.children.length > 0;
+                const nodeDiv = document.createElement('div');
+                nodeDiv.className = `node ${isExpandable ? 'expandable collapsed' : ''}`;
+                nodeDiv.dataset.path = [...path, item.text].join('.');
+                const toggle = document.createElement('span');
+                toggle.className = 'toggle';
+                nodeDiv.appendChild(toggle);
+                const linkSpan = document.createElement('span');
+                linkSpan.className = 'link';
+                linkSpan.textContent = item.text;
+                if (item.href) linkSpan.dataset.href = item.href;
+                nodeDiv.appendChild(linkSpan);
+                if (isExpandable) {
+                    const childrenDiv = document.createElement('div');
+                    childrenDiv.className = 'children';
+                    nodeDiv.appendChild(childrenDiv);
+                    buildLinkTree(item.children, childrenDiv, [...path, item.text]);
+                }
+                parentElement.appendChild(nodeDiv);
+            }
+        }
+
+        // Initialize tabs and render content
+        createTabs();
+        showTab(currentTab);
+    </script>
+</body>
+</html>
