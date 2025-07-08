@@ -25,8 +25,9 @@ Replace `CHANNEL_ID` with your channel’s ID.
 ### 🌐 Web Tool
 
 You can also use the web tool directly:
-
+```
+http://tools.seed.soy/SubscriberCount?channel=YOUR_CHANNEL_ID&digits=DIGITS_IN_YOUR_SUBSCRIBER_COUNT
+```
 - Replace `YOUR_CHANNEL_ID` with your channel’s ID.
 - Replace `DIGITS_IN_YOUR_SUBSCRIBER_COUNT` with the number of digits you want to display (e.g., `3` for 123, `4` for 1,234).
-
 ---
