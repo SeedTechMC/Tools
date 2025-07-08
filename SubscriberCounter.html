@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Subscriber Counter</title>
+  <link rel="icon" type="image/png" href="https://a.seed.soy/Sprout.png" />
+  <style>
+    @font-face {
+      font-family: "YouTube Sans";
+      src: url("https://a.seed.soy/fonts/youtube-sans/YouTubeSansBold.otf") format("opentype");
+      font-weight: normal;
+      font-style: normal;
+    }
+    body {
+      background-color: #00ff00;
+      color: #fff;
+      font-family: "YouTube Sans", sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .analogue-counter {
+      background: linear-gradient(145deg, #8B4513, #654321);
+      border: 4px solid #654321;
+      border-radius: 20px;
+      padding: 30px 40px;
+      box-shadow: 
+        inset 0 4px 8px rgba(0,0,0,0.6),
+        0 8px 16px rgba(0,0,0,0.4);
+      position: relative;
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: nowrap !important;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      width: auto;
+      min-width: fit-content;
+    }
+    .dial-container {
+      background: #2a2a2a;
+      border: 3px solid #444;
+      border-radius: 12px;
+      padding: 15px 8px;
+      box-shadow: 
+        inset 0 2px 4px rgba(0,0,0,0.8),
+        0 2px 4px rgba(0,0,0,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    .dial {
+      width: 60px;
+      height: 80px;
+      background: #1a1a1a;
+      border: 2px solid #333;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Arial', sans-serif;
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 0 0 5px #fff;
+    }
+    .dial-strip {
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    .dial-strip.rotating {
+      animation: slideDialStrip 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    .dial-strip.rotating-backwards {
+      animation: slideDialStripBackwards 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    .dial-digit {
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 0 0 5px #fff;
+    }
+    .dial-separator {
+      font-size: 2.5rem;
+      color: #666;
+      margin: 0 8px;
+      font-weight: bold;
+      text-shadow: 0 0 5px #666;
+    }
+    @keyframes slideDialStrip {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-80px); }
+    }
+    @keyframes slideDialStripBackwards {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(80px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="analogue-counter" id="analogueCounter"></div>
+  <script>
+    const ANIMATION_DURATION = 800;
+    const urlParams = new URLSearchParams(window.location.search);
+    const channelId = urlParams.get('channel') || 'UCGzOOrbn7mVPNc64FZPkWWg';
+    const debug = urlParams.get('debug') || 'false';
+    let DIGITS = parseInt(urlParams.get('digits'), 10);
+    if (isNaN(DIGITS) || DIGITS < 1 || DIGITS > 12) DIGITS = 6;
+
+    // Set the page title to include the channel ID
+    document.title = `Subscriber Counter - ${channelId}`;
+
+    // Dynamically generate dials
+    const counterEl = document.getElementById('analogueCounter');
+    counterEl.innerHTML = '';
+    const strips = [];
+    for (let i = 0; i < DIGITS; i++) {
+      // Insert a comma before every group of 3 digits, except before the first group
+      if (i > 0 && (DIGITS - i) % 3 === 0) {
+        const sep = document.createElement('div');
+        sep.className = 'dial-separator';
+        sep.textContent = ',';
+        counterEl.appendChild(sep);
+      }
+      const container = document.createElement('div');
+      container.className = 'dial-container';
+      const dial = document.createElement('div');
+      dial.className = 'dial';
+      const strip = document.createElement('div');
+      strip.className = 'dial-strip';
+      strip.id = `strip${DIGITS - i}`;
+      for (let j = 0; j < 3; j++) {
+        const digitDiv = document.createElement('div');
+        digitDiv.className = 'dial-digit';
+        digitDiv.textContent = j === 1 ? '0' : '';
+        strip.appendChild(digitDiv);
+      }
+      dial.appendChild(strip);
+      container.appendChild(dial);
+      counterEl.appendChild(container);
+      strips.push(strip);
+    }
+
+    let lastCount = 0;
+    let isFirstLoad = true;
+    let debugMode = false;
+    let debugCount = 0;
+    if (debug === 'true') {
+      debugMode = true;
+      console.log('Debug mode enabled. Use number keys 0-9, arrows, and backspace to control count.');
+    }
+
+    const formatAnalogueNumber = num => num.toString().padStart(DIGITS, '0');
+
+    function setDialStrip(strip, digit) {
+      const digits = strip.children;
+      digits[0].textContent = (digit - 1 + 10) % 10;
+      digits[1].textContent = digit;
+      digits[2].textContent = (digit + 1) % 10;
+    }
+
+    function animateAnalogueDials(newCount, oldCount) {
+      const newStr = formatAnalogueNumber(newCount);
+      const oldStr = formatAnalogueNumber(oldCount);
+      for (let i = 0; i < DIGITS; i++) {
+        const strip = strips[i];
+        const newDigit = parseInt(newStr[i]);
+        const oldDigit = parseInt(oldStr[i]);
+        if (newDigit === oldDigit) {
+          if (isFirstLoad) setDialStrip(strip, newDigit);
+          continue;
+        }
+        // Calculate direction robustly
+        const up = (newDigit - oldDigit + 10) % 10 === 1;
+        const down = (oldDigit - newDigit + 10) % 10 === 1;
+        setDialStrip(strip, oldDigit);
+        const handler = () => {
+          strip.classList.remove('rotating', 'rotating-backwards');
+          setDialStrip(strip, newDigit);
+          strip.removeEventListener('animationend', handler);
+        };
+        strip.addEventListener('animationend', handler);
+        if (up) {
+          strip.classList.add('rotating');
+        } else if (down) {
+          strip.classList.add('rotating-backwards');
+        } else {
+          // For non-adjacent changes, just set the digit (no animation)
+          setDialStrip(strip, newDigit);
+        }
+      }
+    }
+
+    async function fetchCount() {
+      try {
+        const response = await fetch(`https://api.seed.soy/get_creator_counts/creator_subscriber_count?channel=${channelId}`);
+        const text = await response.text();
+        const newCount = parseInt(text, 10);
+        if (!isNaN(newCount)) {
+          if (isFirstLoad) {
+            const numStr = formatAnalogueNumber(newCount);
+            strips.forEach((strip, i) => setDialStrip(strip, parseInt(numStr[i])));
+            lastCount = newCount;
+            isFirstLoad = false;
+          } else if (newCount !== lastCount) {
+            animateAnalogueDials(newCount, lastCount);
+            lastCount = newCount;
+          }
+        } else {
+          // Display ERROR if the response is not a valid number
+          const errorText = ['E','R','R','O','R',''];
+          strips.forEach((strip, i) => {
+            const digits = strip.children;
+            const err = errorText[i] || '';
+            digits[0].textContent = err;
+            digits[1].textContent = err;
+            digits[2].textContent = err;
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching count", err);
+      }
+    }
+
+    document.addEventListener('keydown', event => {
+      if (!debugMode) return;
+      const key = event.key;
+      let oldCount = debugCount;
+      if (key >= '0' && key <= '9') {
+        debugCount = debugCount * 10 + parseInt(key);
+        if (debugCount > 10 ** DIGITS - 1) debugCount = parseInt(debugCount.toString().slice(-DIGITS));
+        if (debugCount !== oldCount) animateAnalogueDials(debugCount, oldCount);
+      } else if (key === 'Backspace') {
+        debugCount = Math.floor(debugCount / 10);
+        if (debugCount < 0) debugCount = 0;
+        if (debugCount !== oldCount) animateAnalogueDials(debugCount, oldCount);
+      } else if (key === 'ArrowUp') {
+        debugCount++;
+        if (debugCount > 10 ** DIGITS - 1) debugCount = 10 ** DIGITS - 1;
+        if (debugCount !== oldCount) animateAnalogueDials(debugCount, oldCount);
+      } else if (key === 'ArrowDown') {
+        debugCount--;
+        if (debugCount < 0) debugCount = 0;
+        if (debugCount !== oldCount) animateAnalogueDials(debugCount, oldCount);
+      } else if (key === 'ArrowRight') {
+        debugCount += 10;
+        if (debugCount > 10 ** DIGITS - 1) debugCount = 10 ** DIGITS - 1;
+        if (debugCount !== oldCount) animateAnalogueDials(debugCount, oldCount);
+      } else if (key === 'ArrowLeft') {
+        debugCount -= 10;
+        if (debugCount < 0) debugCount = 0;
+        if (debugCount !== oldCount) animateAnalogueDials(debugCount, oldCount);
+      } else if (key === 'Enter') {
+        lastCount = debugCount;
+      }
+    });
+
+    fetchCount();
+    setInterval(fetchCount, 10000);
+  </script>
+</body>
+</html>
