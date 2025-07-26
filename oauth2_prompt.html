@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google OAuth2 Token Generator</title>
+    <style>
+        body {
+            font-family: 'Lucida Grande', 'Helvetica Neue', Arial, sans-serif;
+            background: #2A2A2A;
+            background-image: 
+                url('https://a.seed.soy/Aurora.jpg'),
+                linear-gradient(135deg, rgba(0,0,0,0.3) 0%, transparent 50%, rgba(0,0,0,0.2) 100%),
+                linear-gradient(90deg, transparent 0%, transparent 49%, rgba(255,255,255,0.1) 50%, transparent 51%, transparent 100%),
+                linear-gradient(0deg, transparent 0%, transparent 49%, rgba(255,255,255,0.1) 50%, transparent 51%, transparent 100%);
+            background-size: cover, 100% 100%, 30px 30px, 30px 30px;
+            background-position: center center;
+            background-repeat: no-repeat;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        .container {
+            background: rgba(60, 60, 60, 0.8);
+            border: 1px solid #404040;
+            border-radius: 8px;
+            box-shadow: 
+                0 8px 24px rgba(0, 0, 0, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            backdrop-filter: blur(15px);
+        }
+        
+        h1 {
+            color: #ffffff;
+            margin-bottom: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+        }
+        
+        .description {
+            color: #e0e0e0;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .scopes {
+            background: rgba(80, 80, 80, 0.8);
+            border: 1px solid #505050;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        
+        .scope-item {
+            margin: 10px 0;
+            padding: 8px 12px;
+            background: rgba(100, 100, 100, 0.8);
+            border: 1px solid #606060;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 12px;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .scope-input {
+            flex: 1;
+            background: rgba(80, 80, 80, 0.8);
+            border: 1px solid #505050;
+            border-radius: 3px;
+            padding: 6px 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 11px;
+            color: #ffffff;
+        }
+        
+        .remove-scope, .add-scope {
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid;
+        }
+        
+        .remove-scope {
+            background: linear-gradient(to bottom, #E74C3C 0%, #C0392B 50%, #A93226 100%);
+            color: white;
+            border-color: #A93226;
+        }
+        
+        .add-scope {
+            background: linear-gradient(to bottom, #27AE60 0%, #229954 50%, #1E8449 100%);
+            color: white;
+            border-color: #1E8449;
+        }
+        
+        .file-upload {
+            background: rgba(80, 80, 80, 0.8);
+            border: 1px solid #505050;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-label {
+            background: linear-gradient(to bottom, #4A90E2 0%, #357ABD 50%, #2E5A8A 100%);
+            color: white;
+            border: 1px solid #2E5A8A;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .file-label:hover {
+            background: linear-gradient(to bottom, #5A9EE8 0%, #4A90E2 50%, #357ABD 100%);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.25);
+        }
+        
+        .remove-file {
+            background: linear-gradient(to bottom, #E74C3C 0%, #C0392B 50%, #A93226 100%);
+            color: white;
+            border: 1px solid #A93226;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 10px;
+        }
+        
+        .file-upload-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .auth-button {
+            background: linear-gradient(to bottom, #4A90E2 0%, #357ABD 50%, #2E5A8A 100%);
+            color: white;
+            border: 1px solid #2E5A8A;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 
+                0 2px 4px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+        }
+        
+        .auth-button:hover {
+            background: linear-gradient(to bottom, #5A9EE8 0%, #4A90E2 50%, #357ABD 100%);
+            box-shadow: 
+                0 3px 6px rgba(0, 0, 0, 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
+        
+        .auth-button:active {
+            background: linear-gradient(to bottom, #357ABD 0%, #2E5A8A 50%, #1E3A6A 100%);
+            box-shadow: 
+                0 1px 2px rgba(0, 0, 0, 0.3),
+                inset 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .auth-button:disabled,
+        .auth-button[disabled] {
+            background: linear-gradient(to bottom, #666666 0%, #555555 50%, #444444 100%) !important;
+            border-color: #444444 !important;
+            color: #999999 !important;
+            cursor: not-allowed !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+            opacity: 0.6 !important;
+            pointer-events: none !important;
+        }
+        
+        .auth-button:disabled:hover,
+        .auth-button[disabled]:hover {
+            background: linear-gradient(to bottom, #666666 0%, #555555 50%, #444444 100%) !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        .auth-button:disabled:active,
+        .auth-button[disabled]:active {
+            background: linear-gradient(to bottom, #666666 0%, #555555 50%, #444444 100%) !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        /* Additional specificity for disabled buttons */
+        button.auth-button:disabled,
+        button.auth-button[disabled] {
+            background: linear-gradient(to bottom, #666666 0%, #555555 50%, #444444 100%) !important;
+            border-color: #444444 !important;
+            color: #999999 !important;
+            cursor: not-allowed !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+            opacity: 0.6 !important;
+            pointer-events: none !important;
+        }
+        
+        /* Force cursor for disabled buttons */
+        #authorizeBtn:disabled,
+        #refreshBtn:disabled,
+        #clearBtn:disabled {
+            cursor: not-allowed !important;
+        }
+        
+        /* Button wrapper styles */
+        .button-wrapper {
+            display: inline-block;
+        }
+        
+        .button-wrapper.disabled {
+            cursor: not-allowed !important;
+        }
+        
+        .button-wrapper.disabled button {
+            cursor: not-allowed !important;
+        }
+        
+        /* Alternative cursor approach */
+        .disabled-cursor {
+            cursor: not-allowed !important;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+            backdrop-filter: blur(10px);
+        }
+        
+        .success {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+            border: 1px solid #4CAF50;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        
+        .error {
+            background: rgba(244, 67, 54, 0.2);
+            color: #F44336;
+            border: 1px solid #F44336;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        
+        .token-display {
+            background: rgba(80, 80, 80, 0.8);
+            border: 1px solid #505050;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 11px;
+            color: #ffffff;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Google OAuth2 Token Generator</h1>
+        <p class="description">
+            This application requests access to YouTube Partner API with the following scopes:
+        </p>
+        <div class="file-upload">
+            <div class="file-upload-row">
+                <input type="file" id="credentialsFile" class="file-input" accept=".json" onchange="loadCredentials()">
+                <label for="credentialsFile" class="file-label">Upload Google OAuth2 Credentials</label>
+                <button id="removeFileBtn" class="remove-file" onclick="removeFile()" style="display: none;">×</button>
+            </div>
+            <div id="credentialsStatus" style="margin-top: 10px; color: #e0e0e0; font-size: 12px;">No credentials loaded</div>
+        </div>
+        <div class="scopes">
+            <div class="scope-item">
+                <input type="text" class="scope-input" value="https://www.googleapis.com/auth/youtubepartner" placeholder="Enter OAuth scope...">
+                <button class="add-scope" onclick="addScope()">+</button>
+                <button class="remove-scope" onclick="removeScope(this)">×</button>
+            </div>
+            <div class="scope-item">
+                <input type="text" class="scope-input" value="https://www.googleapis.com/auth/youtubepartner-channel-audit" placeholder="Enter OAuth scope...">
+                <button class="add-scope" onclick="addScope()">+</button>
+                <button class="remove-scope" onclick="removeScope(this)">×</button>
+            </div>
+        </div>
+        
+        <div class="button-wrapper">
+            <button class="auth-button" id="authorizeBtn" onclick="startOAuth()">Authorize with Google</button>
+        </div>
+        <div class="button-wrapper">
+            <button class="auth-button" id="refreshBtn" onclick="refreshAccessToken()">Refresh Token</button>
+        </div>
+        <div class="button-wrapper">
+            <button class="auth-button" id="clearBtn" onclick="clearAuth()">Clear Authorization</button>
+        </div>
+        
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        // Google OAuth2 Configuration
+        let CLIENT_ID = '';
+        let CLIENT_SECRET = '';
+        let REDIRECT_URI = '';
+        let SCOPES = [
+            'https://www.googleapis.com/auth/youtubepartner',
+            'https://www.googleapis.com/auth/youtubepartner-channel-audit'
+        ];
+        
+        let accessToken = null;
+        let refreshToken = null;
+        
+        function startOAuth() {
+            const button = event.target;
+            button.disabled = true;
+            button.textContent = 'Authorizing...';
+            
+            // Always use popup method
+            useAlternativeOAuth();
+            
+            // Re-enable button after a delay in case of errors
+            setTimeout(() => {
+                button.disabled = false;
+                button.textContent = 'Authorize with Google';
+            }, 5000);
+        }
+        
+
+        
+        function loadCredentials() {
+            const fileInput = document.getElementById('credentialsFile');
+            const file = fileInput.files[0];
+            
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const credentials = JSON.parse(e.target.result);
+                    
+                    if (credentials.web) {
+                        CLIENT_ID = credentials.web.client_id;
+                        CLIENT_SECRET = credentials.web.client_secret;
+                        // Use the exact redirect URI from the credentials file, or default to the one that matches your console
+                        REDIRECT_URI = credentials.web.redirect_uris[0] || 'https://tools.seed.soy';
+                        
+                        // Store credentials in localStorage
+                        localStorage.setItem('oauth_credentials', JSON.stringify(credentials.web));
+                        
+                        document.getElementById('credentialsStatus').textContent = 
+                            `Loaded: ${credentials.web.project_id} (${credentials.web.client_id.substring(0, 20)}...)`;
+                        document.getElementById('credentialsStatus').style.color = '#4CAF50';
+                        
+                        // Show the remove file button
+                        document.getElementById('removeFileBtn').style.display = 'flex';
+                        
+                        console.log('Credentials loaded:', credentials.web);
+                        console.log('Using redirect URI:', REDIRECT_URI);
+                        
+                        // Update button states after loading credentials
+                        updateButtonStates();
+                    } else {
+                        throw new Error('Invalid credentials format');
+                    }
+                } catch (error) {
+                    document.getElementById('credentialsStatus').textContent = 'Error loading credentials: ' + error.message;
+                    document.getElementById('credentialsStatus').style.color = '#F44336';
+                    console.error('Error parsing credentials:', error);
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        function removeFile() {
+            const fileInput = document.getElementById('credentialsFile');
+            const removeBtn = document.getElementById('removeFileBtn');
+            const statusDiv = document.getElementById('credentialsStatus');
+            
+            // Clear the file input
+            fileInput.value = '';
+            
+            // Hide the remove button
+            removeBtn.style.display = 'none';
+            
+            // Reset credentials
+            CLIENT_ID = '';
+            CLIENT_SECRET = '';
+            REDIRECT_URI = '';
+            
+            // Clear localStorage
+            localStorage.removeItem('oauth_credentials');
+            
+            // Update status
+            statusDiv.textContent = 'No credentials loaded';
+            statusDiv.style.color = '#e0e0e0';
+            
+            // Update button states
+            updateButtonStates();
+        }
+        
+        function addScope() {
+            const scopesContainer = document.querySelector('.scopes');
+            const newScopeItem = document.createElement('div');
+            newScopeItem.className = 'scope-item';
+            newScopeItem.innerHTML = `
+                <input type="text" class="scope-input" placeholder="Enter OAuth scope...">
+                <button class="add-scope" onclick="addScope()">+</button>
+                <button class="remove-scope" onclick="removeScope(this)">×</button>
+            `;
+            scopesContainer.appendChild(newScopeItem);
+            saveScopes();
+        }
+        
+        function removeScope(button) {
+            const scopeItem = button.parentElement;
+            const scopesContainer = document.querySelector('.scopes');
+            
+            // If there's only one scope item, clear it instead of removing
+            if (scopesContainer.children.length === 1) {
+                const input = scopeItem.querySelector('.scope-input');
+                input.value = '';
+            } else {
+                // Remove the scope item if there are multiple
+                scopeItem.remove();
+            }
+            saveScopes();
+        }
+        
+        function getScopes() {
+            const scopeInputs = document.querySelectorAll('.scope-input');
+            return Array.from(scopeInputs).map(input => input.value.trim()).filter(scope => scope.length > 0);
+        }
+        
+        function saveScopes() {
+            const scopes = getScopes();
+            localStorage.setItem('oauth_scopes', JSON.stringify(scopes));
+            console.log('Scopes saved:', scopes);
+        }
+        
+        function loadScopes() {
+            const savedScopes = localStorage.getItem('oauth_scopes');
+            if (savedScopes) {
+                try {
+                    const scopes = JSON.parse(savedScopes);
+                    console.log('Loading saved scopes:', scopes);
+                    
+                    // Clear existing scopes
+                    const scopesContainer = document.querySelector('.scopes');
+                    scopesContainer.innerHTML = '';
+                    
+                    // Add saved scopes
+                    scopes.forEach(scope => {
+                        const scopeItem = document.createElement('div');
+                        scopeItem.className = 'scope-item';
+                        scopeItem.innerHTML = `
+                            <input type="text" class="scope-input" value="${scope}" placeholder="Enter OAuth scope...">
+                            <button class="add-scope" onclick="addScope()">+</button>
+                            <button class="remove-scope" onclick="removeScope(this)">×</button>
+                        `;
+                        scopesContainer.appendChild(scopeItem);
+                    });
+                    
+                    // If no scopes were saved, add the default ones
+                    if (scopes.length === 0) {
+                        addDefaultScopes();
+                    }
+                } catch (error) {
+                    console.error('Error loading scopes:', error);
+                    addDefaultScopes();
+                }
+            } else {
+                addDefaultScopes();
+            }
+        }
+        
+        function addDefaultScopes() {
+            const defaultScopes = [
+                'https://www.googleapis.com/auth/youtubepartner',
+                'https://www.googleapis.com/auth/youtubepartner-channel-audit'
+            ];
+            
+            const scopesContainer = document.querySelector('.scopes');
+            scopesContainer.innerHTML = '';
+            
+            defaultScopes.forEach(scope => {
+                const scopeItem = document.createElement('div');
+                scopeItem.className = 'scope-item';
+                scopeItem.innerHTML = `
+                    <input type="text" class="scope-input" value="${scope}" placeholder="Enter OAuth scope...">
+                    <button class="add-scope" onclick="addScope()">+</button>
+                    <button class="remove-scope" onclick="removeScope(this)">×</button>
+                `;
+                scopesContainer.appendChild(scopeItem);
+            });
+        }
+        
+        function useAlternativeOAuth() {
+            console.log('Starting OAuth flow...');
+            console.log('CLIENT_ID:', CLIENT_ID);
+            console.log('REDIRECT_URI:', REDIRECT_URI);
+            
+            if (!CLIENT_ID) {
+                showResult('Please upload OAuth2 credentials first', 'error');
+                return;
+            }
+            
+            // Force the correct redirect URI that matches your Google Cloud Console
+            const redirectUri = 'https://tools.seed.soy/oauth2_prompt';
+            console.log('Using redirect URI:', redirectUri);
+            
+            const currentScopes = getScopes();
+            console.log('Current scopes:', currentScopes);
+            
+            if (currentScopes.length === 0) {
+                showResult('Please add at least one scope', 'error');
+                return;
+            }
+            
+            const authUrl = `https://accounts.google.com/o/oauth2/auth?` +
+                `client_id=${encodeURIComponent(CLIENT_ID)}&` +
+                `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+                `scope=${encodeURIComponent(currentScopes.join(' '))}&` +
+                `response_type=code&` +
+                `access_type=offline&` +
+                `prompt=consent`;
+            
+            console.log('Redirecting to OAuth URL:', authUrl);
+            
+            // Redirect the main page instead of using popup
+            window.location.href = authUrl;
+        }
+        
+        function exchangeCodeForTokens(code) {
+            if (!CLIENT_ID || !CLIENT_SECRET) {
+                showResult('Please upload OAuth2 credentials first', 'error');
+                return;
+            }
+            
+            console.log('Exchanging code for tokens:', code);
+            const tokenUrl = 'https://oauth2.googleapis.com/token';
+            const params = new URLSearchParams({
+                client_id: CLIENT_ID,
+                client_secret: CLIENT_SECRET,
+                code: code,
+                grant_type: 'authorization_code',
+                redirect_uri: 'https://tools.seed.soy/oauth2_prompt'
+            });
+            
+            console.log('Token request params:', params.toString());
+            
+            fetch(tokenUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: params
+            })
+            .then(response => {
+                console.log('Token response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Token response data:', data);
+                if (data.access_token) {
+                    accessToken = data.access_token;
+                    refreshToken = data.refresh_token;
+                    showResult('Authorization successful!', 'success');
+                    showToken(accessToken);
+                    if (refreshToken) {
+                        showRefreshToken(refreshToken);
+                    }
+                    updateButtonStates();
+                } else {
+                    showResult('Failed to get tokens: ' + JSON.stringify(data), 'error');
+                }
+            })
+            .catch(error => {
+                console.log('Token exchange error:', error);
+                showResult('Error exchanging code for tokens: ' + error.message, 'error');
+            });
+        }
+        
+        function refreshAccessToken() {
+            if (!refreshToken) {
+                showResult('No refresh token available', 'error');
+                return;
+            }
+            
+            if (!CLIENT_ID || !CLIENT_SECRET) {
+                showResult('Please upload OAuth2 credentials first', 'error');
+                return;
+            }
+            
+            const tokenUrl = 'https://oauth2.googleapis.com/token';
+            const params = new URLSearchParams({
+                client_id: CLIENT_ID,
+                client_secret: CLIENT_SECRET,
+                refresh_token: refreshToken,
+                grant_type: 'refresh_token'
+            });
+            
+            fetch(tokenUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: params
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.access_token) {
+                    accessToken = data.access_token;
+                    showResult('Access token refreshed successfully!', 'success');
+                    showToken(accessToken);
+                    updateButtonStates();
+                } else {
+                    showResult('Failed to refresh token: ' + JSON.stringify(data), 'error');
+                }
+            })
+            .catch(error => {
+                showResult('Error refreshing token: ' + error.message, 'error');
+            });
+        }
+        
+        function showRefreshToken(token) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML += `
+                <div class="token-display">
+                    <strong>Refresh Token:</strong><br>
+                    ${token}
+                </div>
+            `;
+        }
+        
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+        }
+        
+        function showToken(token) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML += `
+                <div class="token-display">
+                    <strong>Access Token:</strong><br>
+                    ${token}
+                </div>
+            `;
+            updateButtonStates();
+        }
+        
+        function updateButtonStates() {
+            const authorizeButton = document.getElementById('authorizeBtn');
+            const refreshButton = document.getElementById('refreshBtn');
+            const clearButton = document.getElementById('clearBtn');
+            const authorizeWrapper = authorizeButton.parentElement;
+            const refreshWrapper = refreshButton.parentElement;
+            const clearWrapper = clearButton.parentElement;
+            
+            console.log('Updating button states...');
+            console.log('CLIENT_ID:', CLIENT_ID);
+            console.log('refreshToken:', refreshToken);
+            console.log('accessToken:', accessToken);
+            
+            // Enable/disable authorize button based on credentials availability
+            if (CLIENT_ID) {
+                authorizeButton.disabled = false;
+                authorizeButton.textContent = 'Authorize with Google';
+                authorizeButton.style.background = '';
+                authorizeButton.style.color = '';
+                authorizeButton.style.cursor = '';
+                authorizeButton.style.opacity = '';
+                authorizeWrapper.classList.remove('disabled');
+                authorizeWrapper.classList.remove('disabled-cursor');
+                authorizeButton.classList.remove('disabled-cursor');
+                console.log('Authorize button enabled');
+            } else {
+                authorizeButton.disabled = true;
+                authorizeButton.textContent = 'Authorize with Google';
+                authorizeButton.style.background = 'linear-gradient(to bottom, #666666 0%, #555555 50%, #444444 100%)';
+                authorizeButton.style.color = '#999999';
+                authorizeButton.style.cursor = 'not-allowed';
+                authorizeButton.style.opacity = '0.6';
+                authorizeWrapper.classList.add('disabled');
+                authorizeWrapper.classList.add('disabled-cursor');
+                authorizeButton.classList.add('disabled-cursor');
+                console.log('Authorize button disabled');
+            }
+            
+            // Enable/disable refresh button based on refresh token availability
+            if (refreshToken) {
+                refreshButton.disabled = false;
+                refreshButton.textContent = 'Refresh Token';
+                refreshButton.style.background = '';
+                refreshButton.style.color = '';
+                refreshButton.style.cursor = '';
+                refreshButton.style.opacity = '';
+                refreshWrapper.classList.remove('disabled');
+                refreshWrapper.classList.remove('disabled-cursor');
+                refreshButton.classList.remove('disabled-cursor');
+                console.log('Refresh button enabled');
+            } else {
+                refreshButton.disabled = true;
+                refreshButton.textContent = 'Refresh Token';
+                refreshButton.style.background = 'linear-gradient(to bottom, #666666 0%, #555555 50%, #444444 100%)';
+                refreshButton.style.color = '#999999';
+                refreshButton.style.cursor = 'not-allowed';
+                refreshButton.style.opacity = '0.6';
+                refreshWrapper.classList.add('disabled');
+                refreshWrapper.classList.add('disabled-cursor');
+                refreshButton.classList.add('disabled-cursor');
+                console.log('Refresh button disabled, cursor set to:', refreshButton.style.cursor);
+                console.log('Refresh wrapper classes:', refreshWrapper.className);
+            }
+            
+            // Enable/disable clear button based on any token availability
+            if (accessToken || refreshToken) {
+                clearButton.disabled = false;
+                clearButton.textContent = 'Clear Authorization';
+                clearButton.style.background = '';
+                clearButton.style.color = '';
+                clearButton.style.cursor = '';
+                clearButton.style.opacity = '';
+                clearWrapper.classList.remove('disabled');
+                clearWrapper.classList.remove('disabled-cursor');
+                clearButton.classList.remove('disabled-cursor');
+                console.log('Clear button enabled');
+            } else {
+                clearButton.disabled = true;
+                clearButton.textContent = 'Clear Authorization';
+                clearButton.style.background = 'linear-gradient(to bottom, #666666 0%, #555555 50%, #444444 100%)';
+                clearButton.style.color = '#999999';
+                clearButton.style.cursor = 'not-allowed';
+                clearButton.style.opacity = '0.6';
+                clearWrapper.classList.add('disabled');
+                clearWrapper.classList.add('disabled-cursor');
+                clearButton.classList.add('disabled-cursor');
+                console.log('Clear button disabled, cursor set to:', clearButton.style.cursor);
+                console.log('Clear wrapper classes:', clearWrapper.className);
+            }
+            
+            // Force a repaint
+            refreshButton.style.display = 'none';
+            refreshButton.offsetHeight; // Force reflow
+            refreshButton.style.display = '';
+            
+            clearButton.style.display = 'none';
+            clearButton.offsetHeight; // Force reflow
+            clearButton.style.display = '';
+            
+            // Test cursor values
+            console.log('Testing cursor values...');
+            console.log('refreshButton cursor:', getComputedStyle(refreshButton).cursor);
+            console.log('clearButton cursor:', getComputedStyle(clearButton).cursor);
+            console.log('refreshWrapper cursor:', getComputedStyle(refreshWrapper).cursor);
+            console.log('clearWrapper cursor:', getComputedStyle(clearWrapper).cursor);
+        }
+        
+        function clearAuth() {
+            if (typeof gapi !== 'undefined' && gapi.auth2) {
+                const auth2 = gapi.auth2.getAuthInstance();
+                if (auth2) {
+                    auth2.signOut().then(() => {
+                        accessToken = null;
+                        refreshToken = null;
+                        showResult('Authorization cleared! All tokens have been removed.', 'success');
+                        updateButtonStates();
+                    });
+                }
+            } else {
+                accessToken = null;
+                refreshToken = null;
+                showResult('Authorization cleared! All tokens have been removed.', 'success');
+                updateButtonStates();
+            }
+        }
+        
+        // Check if user is already authorized on page load
+        window.onload = function() {
+            console.log('Page loaded, URL:', window.location.href);
+            console.log('URL search params:', window.location.search);
+            
+            // Load saved credentials from localStorage
+            const savedCredentials = localStorage.getItem('oauth_credentials');
+            if (savedCredentials) {
+                try {
+                    const credentials = JSON.parse(savedCredentials);
+                    CLIENT_ID = credentials.client_id;
+                    CLIENT_SECRET = credentials.client_secret;
+                    REDIRECT_URI = credentials.redirect_uris ? credentials.redirect_uris[0] : 'https://tools.seed.soy';
+                    
+                    document.getElementById('credentialsStatus').textContent = 
+                        `Loaded: ${credentials.project_id || 'Unknown'} (${credentials.client_id.substring(0, 20)}...)`;
+                    document.getElementById('credentialsStatus').style.color = '#4CAF50';
+                    document.getElementById('removeFileBtn').style.display = 'flex';
+                    
+                    console.log('Credentials restored from localStorage:', credentials);
+                } catch (error) {
+                    console.error('Error loading saved credentials:', error);
+                    localStorage.removeItem('oauth_credentials');
+                }
+            }
+            
+            // Load saved scopes
+            loadScopes();
+            
+            // Add event listeners to scope inputs to save on change
+            document.addEventListener('input', function(e) {
+                if (e.target.classList.contains('scope-input')) {
+                    saveScopes();
+                }
+            });
+            
+            // Check for authorization code in URL (from OAuth redirect)
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            console.log('Extracted code:', code);
+            
+            if (code) {
+                console.log('Found authorization code in URL:', code);
+                exchangeCodeForTokens(code);
+                // Clear the URL parameters
+                window.history.replaceState(null, null, window.location.pathname);
+                return;
+            } else {
+                console.log('No authorization code found in URL');
+            }
+            
+            // Set initial button states
+            updateButtonStates();
+        };
+    </script>
+</body>
+</html> 

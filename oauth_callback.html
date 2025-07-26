@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OAuth Callback</title>
+</head>
+<body>
+    <div id="status">Processing authorization...</div>
+    <script>
+        // Debug: Log the full URL
+        console.log('Callback URL:', window.location.href);
+        console.log('URL search params:', window.location.search);
+        
+        // Extract authorization code from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const error = urlParams.get('error');
+        
+        console.log('Extracted code:', code);
+        console.log('Extracted error:', error);
+        
+        if (error) {
+            // Handle error
+            window.opener.postMessage({
+                type: 'oauth_error',
+                error: error
+            }, 'https://tools.seed.soy');
+            document.getElementById('status').textContent = 'Authorization failed: ' + error;
+            setTimeout(() => window.close(), 2000);
+        } else if (code) {
+            // Send code back to parent window
+            console.log('Sending code to parent window:', code);
+            console.log('window.opener exists:', !!window.opener);
+            console.log('window.opener location:', window.opener ? window.opener.location.href : 'N/A');
+            
+            // Add delay to see what's happening
+            setTimeout(() => {
+                try {
+                    const message = {
+                        type: 'oauth_code',
+                        code: code
+                    };
+                    console.log('Sending message:', message);
+                    window.opener.postMessage(message, 'https://tools.seed.soy');
+                    document.getElementById('status').textContent = 'Authorization successful! Message sent.';
+                    
+                    // Don't close immediately - let user see what happened
+                    setTimeout(() => {
+                        console.log('Closing popup after 3 seconds');
+                        window.close();
+                    }, 3000);
+                } catch (e) {
+                    console.log('Error sending message to parent:', e);
+                    document.getElementById('status').textContent = 'Error sending code to parent window';
+                    // Fallback: redirect to main page with code
+                    setTimeout(() => {
+                        window.location.href = 'https://tools.seed.soy/oauth2_prompt.html?code=' + encodeURIComponent(code);
+                    }, 2000);
+                }
+            }, 500);
+        } else {
+            // No code or error found
+            window.opener.postMessage({
+                type: 'oauth_error',
+                error: 'No authorization code received'
+            }, 'https://tools.seed.soy');
+            document.getElementById('status').textContent = 'No authorization code found';
+            setTimeout(() => window.close(), 2000);
+        }
+    </script>
+</body>
+</html> 
